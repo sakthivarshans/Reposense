@@ -17,7 +17,7 @@ from models.schemas import (
     ErrorResponse
 )
 from services.github_service import GitHubService
-from services.bob_service import BobService
+from services import groq_service
 from services.firestore_service import FirestoreService
 from services.chunker_service import ChunkerService
 
@@ -29,7 +29,6 @@ router = APIRouter()
 
 # Initialize services
 github_service = GitHubService()
-bob_service = BobService()
 firestore_service = FirestoreService()
 chunker_service = ChunkerService()
 
@@ -109,21 +108,21 @@ async def analyze_repository(request: AnalyzeRequest) -> AnalysisResult:
         chunks = chunker_service.chunk_repo(repo_tree)
         logger.info(f"Repository chunked into {len(chunks)} chunks")
         
-        # Log estimated Bob cost
+        # Log estimated cost
         estimated_cost = chunker_service.estimate_bob_cost(chunks)
-        logger.info(f"Estimated Bob AI cost: {estimated_cost} Bobcoins")
+        logger.info(f"Estimated Groq AI cost: {estimated_cost} tokens")
         
-        # Step 6: Analyze with Bob AI
-        logger.info("Analyzing repository with Bob AI...")
-        analysis = await bob_service.analyze_full(chunks, repo_url)
+        # Step 6: Analyze with Groq AI
+        logger.info("Analyzing repository with Groq AI...")
+        analysis = await groq_service.analyze_full(chunks)
         
         if not analysis:
             raise HTTPException(
                 status_code=500,
-                detail="Failed to analyze repository with Bob AI. Please try again later."
+                detail="Failed to analyze repository with Groq AI. Please try again later."
             )
         
-        logger.info("Bob AI analysis completed successfully")
+        logger.info("Groq AI analysis completed successfully")
         
         # Step 7: Prepare result
         result = AnalysisResult(
@@ -204,21 +203,28 @@ async def chat_with_repository(request: ChatRequest) -> ChatResponse:
         chat_history = await firestore_service.get_session_history(request.session_id)
         logger.info(f"Loaded {len(chat_history)} previous messages")
         
-        # Step 3: Call Bob AI
-        logger.info("Sending question to Bob AI...")
-        answer = await bob_service.chat(
+        # Step 3: Call Groq AI
+        logger.info("Sending question to Groq AI...")
+        
+        # Prepare chunks from cached analysis for context
+        chunks = [{
+            "type": "METADATA",
+            "content": repo_context.get("summary", "No summary available")
+        }]
+        
+        answer = await groq_service.chat(
             question=request.question,
-            repo_summary=repo_context.get("summary", "No summary available"),
-            chat_history=chat_history
+            chunks=chunks,
+            history=chat_history
         )
         
         if not answer:
             raise HTTPException(
                 status_code=500,
-                detail="Failed to get response from Bob AI. Please try again."
+                detail="Failed to get response from Groq AI. Please try again."
             )
         
-        logger.info("Received answer from Bob AI")
+        logger.info("Received answer from Groq AI")
         
         # Step 4: Append to chat history
         logger.info("Saving chat messages to Firestore...")
@@ -257,4 +263,4 @@ async def chat_with_repository(request: ChatRequest) -> ChatResponse:
             detail=f"Chat failed: {str(e)}"
         )
 
-# Made with Bob
+# Powered by Groq AI
