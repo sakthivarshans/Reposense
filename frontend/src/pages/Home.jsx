@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RepoInput from '../components/RepoInput';
-import { api } from '../api/client';
+import StatsBar from '../components/StatsBar';
+import { analyzeRepo } from '../api/client';
 
 function Home() {
   const navigate = useNavigate();
@@ -13,9 +14,9 @@ function Home() {
     setError(null);
 
     try {
-      const result = await api.analyzeRepository(repoUrl, branch);
-      // Navigate to results page with repo ID
-      navigate(`/results/${result.repo_id}`);
+      const result = await analyzeRepo(repoUrl, false);
+      // Navigate to results page with analysis data
+      navigate('/results', { state: { analysisData: result, repoUrl } });
     } catch (err) {
       setError(err.message || 'Failed to analyze repository');
       setIsAnalyzing(false);

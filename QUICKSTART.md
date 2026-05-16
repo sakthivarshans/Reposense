@@ -136,7 +136,7 @@ npm run dev
 2. You should see the RepoSense home page
 3. Enter a GitHub repository URL (e.g., `https://github.com/facebook/react`)
 4. Click "Analyze Repository"
-5. Wait 30-60 seconds for Bob to analyze
+5. Wait 30-60 seconds for AI analysis (powered by Groq)
 6. Explore the results!
 
 ## 🐛 Troubleshooting
@@ -249,21 +249,21 @@ Try these public repositories:
 
 ### Expected Behavior
 
-1. **Analysis takes 30-60 seconds** (Bob is reading the entire codebase)
+1. **Analysis takes 30-60 seconds** (AI is analyzing the entire codebase)
 2. **You'll see 4 tabs:**
    - Architecture: Interactive graph
    - Heatmap: Risk-scored files
    - Onboarding: AI-generated guide
-   - Chat: Ask Bob questions
+   - Chat: Ask AI questions
 
-3. **Chat is interactive** - Ask Bob anything about the codebase!
+3. **Chat is interactive** - Ask the AI anything about the codebase!
 
 ## 💡 Tips
 
 - **First analysis is slower** (no cache)
 - **Subsequent analyses are instant** (cached in Firestore)
 - **Use the chat** to ask specific questions
-- **Click nodes in architecture map** to ask Bob about them
+- **Click nodes in architecture map** to ask AI about them
 - **Filter heatmap** by risk level
 - **Export onboarding guide** to PDF
 

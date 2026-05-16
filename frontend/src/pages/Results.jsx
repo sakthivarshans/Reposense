@@ -1,42 +1,30 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../api/client';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { analyzeRepo } from '../api/client';
 import ArchMap from '../components/ArchMap';
 import Heatmap from '../components/Heatmap';
 import ChatPanel from '../components/ChatPanel';
-import StatsBar from '../components/StatsBar';
 import OnboardingGuide from '../components/OnboardingGuide';
 
 function Results() {
-  const { repoId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('architecture');
   const [showOnboarding, setShowOnboarding] = useState(true);
 
   useEffect(() => {
-    loadData();
-  }, [repoId]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [analysisData, statsData] = await Promise.all([
-        api.getAnalysis(repoId),
-        api.getRepositoryStats(repoId),
-      ]);
-      setAnalysis(analysisData);
-      setStats(statsData);
-      setError(null);
-    } catch (err) {
-      setError(err.message || 'Failed to load repository data');
-    } finally {
+    // Get analysis data from navigation state
+    if (location.state?.analysisData) {
+      setAnalysis(location.state.analysisData);
       setLoading(false);
+    } else {
+      // If no state, redirect to home
+      navigate('/');
     }
-  };
+  }, [location, navigate]);
 
   if (loading) {
     return (

@@ -6,7 +6,7 @@ Handles interactions with Firebase Firestore database using firebase-admin SDK
 import os
 import hashlib
 import asyncio
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from datetime import datetime
 from functools import partial
 import logging
@@ -16,6 +16,9 @@ try:
     from firebase_admin import credentials, firestore
     FIREBASE_AVAILABLE = True
 except ImportError:
+    firebase_admin = None  # type: ignore
+    credentials = None  # type: ignore
+    firestore = None  # type: ignore
     FIREBASE_AVAILABLE = False
     logging.warning("Firebase Admin SDK not installed. Install with: pip install firebase-admin")
 
@@ -44,7 +47,7 @@ class FirestoreService:
     """Service for interacting with Firebase Firestore"""
     
     def __init__(self):
-        self.db = None
+        self.db: Optional[Any] = None
         
         if not FIREBASE_AVAILABLE:
             logger.error("Firebase Admin SDK not available. Please install: pip install firebase-admin")
@@ -52,7 +55,7 @@ class FirestoreService:
         
         try:
             # Initialize Firebase Admin SDK if not already initialized
-            if not firebase_admin._apps:
+            if firebase_admin and not firebase_admin._apps:
                 cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
                 
                 if not cred_path:
@@ -63,12 +66,14 @@ class FirestoreService:
                     logger.error(f"Firebase credentials file not found: {cred_path}")
                     return
                 
-                cred = credentials.Certificate(cred_path)
-                firebase_admin.initialize_app(cred)
-                logger.info("Firebase initialized successfully")
+                if credentials:
+                    cred = credentials.Certificate(cred_path)
+                    firebase_admin.initialize_app(cred)
+                    logger.info("Firebase initialized successfully")
             
-            self.db = firestore.client()
-            logger.info("Firestore client created successfully")
+            if firestore:
+                self.db = firestore.client()
+                logger.info("Firestore client created successfully")
             
         except Exception as e:
             logger.error(f"Failed to initialize Firebase: {e}", exc_info=True)
@@ -94,6 +99,8 @@ class FirestoreService:
             # Run sync Firestore call in executor
             loop = asyncio.get_event_loop()
             doc_ref = self.db.collection('analyses').document(repo_hash)
+            
+            # Properly await the executor result
             doc = await loop.run_in_executor(None, doc_ref.get)
             
             if doc.exists:
@@ -146,6 +153,9 @@ class FirestoreService:
         Args:
             repo_url: Repository URL
         """
+        if not self.db:
+            return
+            
         try:
             loop = asyncio.get_event_loop()
             stats_ref = self.db.collection('stats').document('global')
@@ -155,8 +165,8 @@ class FirestoreService:
             
             if doc.exists:
                 data = doc.to_dict()
-                total_analyses = data.get('total_analyses', 0) + 1
-                recent_repos = data.get('recent_repos', [])
+                total_analyses = data.get('total_analyses', 0) + 1 if data else 1
+                recent_repos = data.get('recent_repos', []) if data else []
             else:
                 total_analyses = 1
                 recent_repos = []
@@ -204,7 +214,7 @@ class FirestoreService:
             
             if doc.exists:
                 data = doc.to_dict()
-                chat_history = data.get('chatHistory', [])
+                chat_history = data.get('chatHistory', []) if data else []
                 logger.info(f"Retrieved {len(chat_history)} messages for session {session_id}")
                 return chat_history
             
@@ -254,7 +264,7 @@ class FirestoreService:
             if doc.exists:
                 # Append to existing chatHistory
                 data = doc.to_dict()
-                chat_history = data.get('chatHistory', [])
+                chat_history = data.get('chatHistory', []) if data else []
                 chat_history.append(new_message)
                 
                 # Keep max 50 messages (trim oldest)
@@ -262,7 +272,7 @@ class FirestoreService:
                     chat_history = chat_history[-50:]
                 
                 session_data = {
-                    'repo_url': data.get('repo_url', repo_url),
+                    'repo_url': data.get('repo_url', repo_url) if data else repo_url,
                     'chatHistory': chat_history,
                     'updated_at': datetime.utcnow()
                 }
@@ -305,17 +315,18 @@ class FirestoreService:
             
             if doc.exists:
                 data = doc.to_dict()
-                logger.info(f"Global stats retrieved: {data.get('total_analyses', 0)} analyses")
-                
-                # Calculate total_repos from recent_repos
-                recent_repos = data.get('recent_repos', [])
-                unique_repos = len(set(r.get('repo_url', '') for r in recent_repos))
-                
-                return {
-                    'total_analyses': data.get('total_analyses', 0),
-                    'total_repos': unique_repos,
-                    'recent_repos': recent_repos
-                }
+                if data:
+                    logger.info(f"Global stats retrieved: {data.get('total_analyses', 0)} analyses")
+                    
+                    # Calculate total_repos from recent_repos
+                    recent_repos = data.get('recent_repos', [])
+                    unique_repos = len(set(r.get('repo_url', '') for r in recent_repos if isinstance(r, dict)))
+                    
+                    return {
+                        'total_analyses': data.get('total_analyses', 0),
+                        'total_repos': unique_repos,
+                        'recent_repos': recent_repos
+                    }
             
             logger.info("No global stats found, returning defaults")
             return {
@@ -331,5 +342,9 @@ class FirestoreService:
                 'total_repos': 0,
                 'recent_repos': []
             }
+
+
+# Create singleton instance
+firestore_service = FirestoreService()
 
 # Made with Bob

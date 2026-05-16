@@ -6,7 +6,7 @@ Handles all AI-powered analysis using Groq API
 import os
 import json
 import httpx
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 # Groq API configuration
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -311,7 +311,7 @@ Use proper markdown formatting with headers, lists, code blocks, and tables."""
     return await _call_groq(messages, temperature=0.7, max_tokens=3000)
 
 
-async def chat(question: str, chunks: List[Dict[str, Any]], history: List[Dict[str, str]] = None) -> str:
+async def chat(question: str, chunks: List[Dict[str, Any]], history: Optional[List[Dict[str, str]]] = None) -> str:
     """
     Answer questions about the codebase using Groq
     
@@ -375,5 +375,3 @@ async def analyze_full(chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
         "complexity_map": complexity_map,
         "onboarding_guide": onboarding_guide
     }
-
-# Made with Bob
