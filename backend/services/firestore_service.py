@@ -91,22 +91,37 @@ class FirestoreService:
             return
         
         try:
-            # Initialize Firebase Admin SDK if not already initialized
             if firebase_admin and not firebase_admin._apps:
-                cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
-                
-                if not cred_path:
-                    logger.error("FIREBASE_CREDENTIALS_PATH environment variable not set")
+                cred = None
+
+                # ── Option 1: JSON string env var (for Render / cloud deploy) ──
+                cred_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
+                if cred_json:
+                    import json
+                    cred_dict = json.loads(cred_json)
+                    if credentials:
+                        cred = credentials.Certificate(cred_dict)
+                        logger.info("Firebase credentials loaded from FIREBASE_CREDENTIALS_JSON env var")
+
+                # ── Option 2: File path env var (for local dev) ──
+                if cred is None:
+                    cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
+                    if cred_path and os.path.exists(cred_path):
+                        if credentials:
+                            cred = credentials.Certificate(cred_path)
+                            logger.info(f"Firebase credentials loaded from file: {cred_path}")
+                    elif cred_path:
+                        logger.error(f"Firebase credentials file not found: {cred_path}")
+
+                if cred is None:
+                    logger.error(
+                        "No Firebase credentials found. Set FIREBASE_CREDENTIALS_JSON "
+                        "(JSON string) or FIREBASE_CREDENTIALS_PATH (file path)."
+                    )
                     return
-                
-                if not os.path.exists(cred_path):
-                    logger.error(f"Firebase credentials file not found: {cred_path}")
-                    return
-                
-                if credentials:
-                    cred = credentials.Certificate(cred_path)
-                    firebase_admin.initialize_app(cred)
-                    logger.info("Firebase initialized successfully")
+
+                firebase_admin.initialize_app(cred)
+                logger.info("Firebase initialized successfully")
             
             if firestore:
                 self.db = firestore.client()
@@ -115,6 +130,7 @@ class FirestoreService:
         except Exception as e:
             logger.error(f"Failed to initialize Firebase: {e}", exc_info=True)
             self.db = None
+
     
     async def get_cached_analysis(self, repo_hash: str) -> Optional[Dict[str, Any]]:
         """
