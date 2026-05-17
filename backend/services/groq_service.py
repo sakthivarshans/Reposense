@@ -352,7 +352,9 @@ Answer questions clearly and concisely. Reference specific files and code when r
         "content": question
     })
     
-    return await _call_groq(messages, temperature=0.7, max_tokens=1000)
+    raw = await _call_groq(messages, temperature=0.7, max_tokens=1000)
+    # Strip any surrounding quote characters the model may add
+    return raw.strip().strip("'\"")
 
 
 async def generate_tech_stack(chunks: List[Dict[str, Any]]) -> List[str]:

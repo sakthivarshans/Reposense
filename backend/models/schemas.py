@@ -77,8 +77,9 @@ class ArchitectureNode(BaseModel):
     """Schema for architecture graph nodes"""
     id: str
     label: str
-    type: str  # file, directory, module, class, function
+    type: str  # file, directory, module, class, function, frontend, backend, database, config, test
     group: Optional[str] = None
+    description: Optional[str] = None  # AI often returns this; make it optional to avoid validation errors
     
     class Config:
         json_schema_extra = {
@@ -95,7 +96,10 @@ class ArchitectureEdge(BaseModel):
     """Schema for architecture graph edges"""
     source: str
     target: str
-    type: str  # import, call, inherit
+    # 'type' is optional because the AI commonly returns 'label' instead.
+    # Defaults to 'depends_on' so validation never fails on AI output.
+    type: Optional[str] = Field(default="depends_on", description="Relationship type: import, call, inherit, depends_on")
+    label: Optional[str] = None  # Human-readable edge label used by D3 visualization
     
     class Config:
         json_schema_extra = {

@@ -214,7 +214,16 @@ class FirestoreService:
             
             if doc.exists:
                 data = doc.to_dict()
-                chat_history = data.get('chatHistory', []) if data else []
+                raw_history = data.get('chatHistory', []) if data else []
+                # Convert any Firestore DatetimeWithNanoseconds → ISO strings
+                chat_history = [
+                    {
+                        k: (v.isoformat() if hasattr(v, 'isoformat') else v)
+                        for k, v in msg.items()
+                    }
+                    for msg in raw_history
+                    if isinstance(msg, dict)
+                ]
                 logger.info(f"Retrieved {len(chat_history)} messages for session {session_id}")
                 return chat_history
             
