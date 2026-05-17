@@ -14,14 +14,20 @@ GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 # NOTE: GROQ_API_KEY and GROQ_MODEL are read at call time so that load_dotenv() in main.py takes effect first
 
 
-async def _call_groq(messages: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 4000) -> str:
+async def _call_groq(
+    messages: List[Dict[str, str]],
+    temperature: float = 0.7,
+    max_tokens: int = 4000,
+    max_retries: int = 5,
+) -> str:
     """
-    Make a request to Groq API
+    Make a request to Groq API with automatic retry on rate-limit (429) errors.
     
     Args:
         messages: List of message dicts with 'role' and 'content'
         temperature: Sampling temperature (0-2)
         max_tokens: Maximum tokens in response
+        max_retries: Maximum number of retry attempts on 429 errors
         
     Returns:
         Response text from Groq
@@ -43,23 +49,53 @@ async def _call_groq(messages: List[Dict[str, str]], temperature: float = 0.7, m
         "max_tokens": max_tokens,
     }
     
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        try:
-            response = await client.post(
-                GROQ_API_URL,
-                headers=headers,
-                json=payload
-            )
-            response.raise_for_status()
-            
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
-            
-        except httpx.HTTPStatusError as e:
-            error_detail = e.response.text
-            raise Exception(f"Groq API error: {e.response.status_code} - {error_detail}")
-        except Exception as e:
-            raise Exception(f"Groq API request failed: {str(e)}")
+    for attempt in range(max_retries):
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            try:
+                response = await client.post(
+                    GROQ_API_URL,
+                    headers=headers,
+                    json=payload
+                )
+                
+                if response.status_code == 429:
+                    # Parse retry-after hint from the error body if available
+                    try:
+                        err_body = response.json()
+                        msg = err_body.get("error", {}).get("message", "")
+                        # Groq includes "Please try again in Xs" in the message
+                        import re
+                        match = re.search(r"try again in ([\d.]+)s", msg)
+                        wait_seconds = float(match.group(1)) if match else 2 ** attempt * 2
+                    except Exception:
+                        wait_seconds = 2 ** attempt * 2
+                    
+                    # Add a small buffer on top of the suggested wait
+                    wait_seconds = wait_seconds + 1.0
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Groq rate limit hit (attempt {attempt + 1}/{max_retries}). "
+                        f"Retrying in {wait_seconds:.1f}s..."
+                    )
+                    await asyncio.sleep(wait_seconds)
+                    continue  # Retry
+                
+                response.raise_for_status()
+                
+                data = response.json()
+                return data["choices"][0]["message"]["content"]
+                
+            except httpx.HTTPStatusError as e:
+                error_detail = e.response.text
+                raise Exception(f"Groq API error: {e.response.status_code} - {error_detail}")
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                if "Groq API error" in str(e):
+                    raise
+                raise Exception(f"Groq API request failed: {str(e)}")
+    
+    raise Exception(f"Groq API rate limit exceeded after {max_retries} retries. Please wait a moment and try again.")
 
 
 async def generate_summary(chunks: List[Dict[str, Any]]) -> str:
@@ -239,13 +275,34 @@ Return ONLY the JSON array, no other text."""
         elif "```" in response:
             response = response.split("```")[1].split("```")[0].strip()
         
-        return json.loads(response)
-    except json.JSONDecodeError:
+        raw = json.loads(response)
+        if not isinstance(raw, list):
+            raise json.JSONDecodeError("Expected list", response, 0)
+        
+        # Normalize: LLM sometimes uses 'file', 'file_path', 'path' instead of 'filename'
+        normalized = []
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            filename = (
+                item.get("filename")
+                or item.get("file")
+                or item.get("file_path")
+                or item.get("path")
+                or "unknown"
+            )
+            normalized.append({
+                "filename": filename,
+                "risk_score": float(item.get("risk_score", 5)),
+                "reason": item.get("reason") or item.get("explanation") or "No reason provided",
+            })
+        return normalized
+    except (json.JSONDecodeError, ValueError):
         # Fallback: generate basic scores
         return [
             {
                 "filename": f["file"],
-                "risk_score": 5,
+                "risk_score": 5.0,
                 "reason": "Unable to analyze complexity"
             }
             for f in files_info[:10]
@@ -342,9 +399,14 @@ Answer questions clearly and concisely. Reference specific files and code when r
         }
     ]
     
-    # Add chat history
+    # Add chat history — strip to only role+content (Groq rejects extra fields like 'timestamp')
     if history:
-        messages.extend(history[-10:])  # Last 10 messages for context
+        clean_history = [
+            {"role": msg["role"], "content": msg["content"]}
+            for msg in history[-10:]
+            if msg.get("role") in ("user", "assistant") and msg.get("content")
+        ]
+        messages.extend(clean_history)
     
     # Add current question
     messages.append({
@@ -417,13 +479,12 @@ async def analyze_full(chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
     Returns:
         Complete analysis results
     """
-    # Step 1: Run 4 independent analyses in parallel for speed
-    summary, architecture, complexity_map, tech_stack = await asyncio.gather(
-        generate_summary(chunks),
-        generate_architecture_map(chunks),
-        generate_complexity_map(chunks),
-        generate_tech_stack(chunks),
-    )
+    # Step 1: Run analyses sequentially to avoid Groq TPM rate limits.
+    # Parallel requests cause token burst which triggers 429 errors on free-tier plans.
+    summary = await generate_summary(chunks)
+    architecture = await generate_architecture_map(chunks)
+    complexity_map = await generate_complexity_map(chunks)
+    tech_stack = await generate_tech_stack(chunks)
     
     # Step 2: Onboarding guide depends on summary — run after
     onboarding_guide = await generate_onboarding_guide(chunks, summary)

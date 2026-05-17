@@ -85,6 +85,23 @@ async def analyze_repository(request: AnalyzeRequest) -> AnalysisResult:
             if cached_result:
                 logger.info("Cache hit! Returning cached analysis")
                 cached_result["cached"] = True
+                # Normalize complexity_map keys (old cache may use 'file' instead of 'filename')
+                raw_map = cached_result.get("complexity_map", [])
+                if isinstance(raw_map, list):
+                    cached_result["complexity_map"] = [
+                        {
+                            "filename": (
+                                item.get("filename")
+                                or item.get("file")
+                                or item.get("file_path")
+                                or "unknown"
+                            ),
+                            "risk_score": float(item.get("risk_score", 5)),
+                            "reason": item.get("reason") or "No reason provided",
+                        }
+                        for item in raw_map
+                        if isinstance(item, dict)
+                    ]
                 return AnalysisResult(**cached_result)
             
             logger.info("Cache miss. Proceeding with fresh analysis")

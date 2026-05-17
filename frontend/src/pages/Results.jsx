@@ -180,7 +180,7 @@ function Results() {
               subtitle="Interactive graph — drag nodes, scroll to zoom, click for details"
             />
             <div className="bg-gray-800/50 rounded-xl border border-gray-700 overflow-hidden mt-6" style={{ minHeight: '600px' }}>
-              <ArchMap data={analysis?.architecture || { nodes: [], edges: [] }} />
+              <ArchMap data={analysis?.architecture || { nodes: [], edges: [] }} repoUrl={repoUrl} />
             </div>
           </div>
         )}
