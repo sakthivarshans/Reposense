@@ -7,13 +7,13 @@ services:
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     plan: free
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
       - key: GROQ_API_KEY
-        sync: false          # you enter the value manually in Render dashboard
+        sync: false
       - key: GITHUB_TOKEN
         sync: false
       - key: FIREBASE_CREDENTIALS_JSON
-        sync: false          # paste the entire firebase-credentials.json content here
-      - key: GROQ_MODEL
-        value: llama-3.3-70b-versatile
-      - key: PYTHON_VERSION
-        value: "3.11.0"
+        sync: false
