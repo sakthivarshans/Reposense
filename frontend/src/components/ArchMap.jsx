@@ -9,12 +9,12 @@ import { sendChat } from '../api/client';
 /* ── Constants ──────────────────────────────────────────────────── */
 const NODE_R = 28;
 const NODE_COLORS = {
-  frontend: '#3B82F6',
-  backend:  '#8B5CF6',
-  database: '#10B981',
-  config:   '#F59E0B',
-  test:     '#6B7280',
-  default:  '#64748B',
+  frontend: '#C8920A',
+  backend:  '#A67C00',
+  database: '#2E7D52',
+  config:   '#6B5B2E',
+  test:     '#4A4A4A',
+  default:  '#555555',
 };
 
 /* ── Normalise API data ──────────────────────────────────────────── */
@@ -507,14 +507,14 @@ export default function ArchMap({ data, repoUrl }) {
       {/* ── Legend ─────────────────────────────────────────────────── */}
       <div style={{
         position: 'absolute', top: 12, left: 12, zIndex: 10,
-        background: 'rgba(15,23,42,0.92)', border: '1px solid #1e293b',
+        background: 'rgba(17,17,17,0.95)', border: '1px solid #2A2A2A',
         borderRadius: 10, padding: '12px 16px', pointerEvents: 'none',
       }}>
-        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#64748b', margin: '0 0 8px' }}>MODULE TYPES</p>
+        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#555', margin: '0 0 8px', textTransform: 'uppercase' }}>Module Types</p>
         {Object.entries(NODE_COLORS).filter(([k]) => k !== 'default').map(([type, color]) => (
           <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />
-            <span style={{ fontSize: 12, color: '#94a3b8', textTransform: 'capitalize' }}>{type}</span>
+            <span style={{ fontSize: 12, color: '#A0A0A0', textTransform: 'capitalize' }}>{type}</span>
           </div>
         ))}
       </div>
@@ -522,10 +522,10 @@ export default function ArchMap({ data, repoUrl }) {
       {/* ── Controls hint ───────────────────────────────────────────── */}
       <div style={{
         position: 'absolute', top: 12, right: 12, zIndex: 10,
-        background: 'rgba(15,23,42,0.92)', border: '1px solid #1e293b',
+        background: 'rgba(17,17,17,0.95)', border: '1px solid #2A2A2A',
         borderRadius: 10, padding: '10px 14px', pointerEvents: 'none',
       }}>
-        <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.9 }}>
+        <div style={{ fontSize: 12, color: '#555', lineHeight: 1.9 }}>
           <div>🖱️ Drag nodes • drag bg to pan</div>
           <div>🔍 Scroll to zoom</div>
           <div>👆 Click node → Ask AI</div>
@@ -535,11 +535,11 @@ export default function ArchMap({ data, repoUrl }) {
       {/* ── Stats badge ─────────────────────────────────────────────── */}
       <div style={{
         position: 'absolute', bottom: aiPanelNode ? '53%' : 12, left: 12, zIndex: 10,
-        background: 'rgba(15,23,42,0.92)', border: '1px solid #1e293b',
+        background: 'rgba(17,17,17,0.95)', border: '1px solid #2A2A2A',
         borderRadius: 8, padding: '5px 12px', pointerEvents: 'none',
         transition: 'bottom 0.25s',
       }}>
-        <span style={{ fontSize: 12, color: '#64748b' }}>
+        <span style={{ fontSize: 12, color: '#555' }}>
           {norm.nodes.length} modules · {norm.edges.length} connections
         </span>
       </div>

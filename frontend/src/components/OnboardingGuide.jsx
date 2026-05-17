@@ -1,12 +1,13 @@
 import { useState } from 'react';
 
+const GOLD = '#C8920A';
+
 const OnboardingGuide = ({ content }) => {
   const [copied, setCopied] = useState(false);
 
-  // Simple markdown parser
+  // Simple markdown parser — logic unchanged
   const parseMarkdown = (text) => {
     if (!text) return [];
-    
     const lines = text.split('\n');
     const elements = [];
     let currentList = [];
@@ -16,27 +17,16 @@ const OnboardingGuide = ({ content }) => {
     let tableRows = [];
 
     const flushList = () => {
-      if (currentList.length > 0) {
-        elements.push({ type: 'list', items: [...currentList] });
-        currentList = [];
-      }
+      if (currentList.length > 0) { elements.push({ type: 'list', items: [...currentList] }); currentList = []; }
     };
-
     const flushTable = () => {
-      if (tableHeaders.length > 0) {
-        elements.push({ type: 'table', headers: [...tableHeaders], rows: [...tableRows] });
-        tableHeaders = [];
-        tableRows = [];
-        inTable = false;
-      }
+      if (tableHeaders.length > 0) { elements.push({ type: 'table', headers: [...tableHeaders], rows: [...tableRows] }); tableHeaders = []; tableRows = []; inTable = false; }
     };
 
-    lines.forEach((line, index) => {
-      // Code blocks
+    lines.forEach((line) => {
       if (line.trim().startsWith('```')) {
         if (currentCodeBlock === null) {
-          flushList();
-          flushTable();
+          flushList(); flushTable();
           currentCodeBlock = { language: line.trim().slice(3), code: [] };
         } else {
           elements.push({ type: 'code', ...currentCodeBlock });
@@ -44,64 +34,23 @@ const OnboardingGuide = ({ content }) => {
         }
         return;
       }
+      if (currentCodeBlock !== null) { currentCodeBlock.code.push(line); return; }
 
-      if (currentCodeBlock !== null) {
-        currentCodeBlock.code.push(line);
-        return;
-      }
-
-      // Headers
-      if (line.startsWith('## ')) {
-        flushList();
-        flushTable();
-        elements.push({ type: 'h2', text: line.slice(3) });
-      } else if (line.startsWith('### ')) {
-        flushList();
-        flushTable();
-        elements.push({ type: 'h3', text: line.slice(4) });
-      } else if (line.startsWith('#### ')) {
-        flushList();
-        flushTable();
-        elements.push({ type: 'h4', text: line.slice(5) });
-      }
-      // Table detection
+      if (line.startsWith('## ')) { flushList(); flushTable(); elements.push({ type: 'h2', text: line.slice(3) }); }
+      else if (line.startsWith('### ')) { flushList(); flushTable(); elements.push({ type: 'h3', text: line.slice(4) }); }
+      else if (line.startsWith('#### ')) { flushList(); flushTable(); elements.push({ type: 'h4', text: line.slice(5) }); }
       else if (line.includes('|') && line.trim().startsWith('|')) {
         flushList();
         const cells = line.split('|').map(c => c.trim()).filter(c => c);
-        
-        if (line.includes('---')) {
-          // Skip separator line
-          return;
-        }
-        
-        if (!inTable) {
-          tableHeaders = cells;
-          inTable = true;
-        } else {
-          tableRows.push(cells);
-        }
+        if (line.includes('---')) return;
+        if (!inTable) { tableHeaders = cells; inTable = true; } else { tableRows.push(cells); }
       }
-      // Lists
-      else if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-        flushTable();
-        currentList.push(line.trim().slice(2));
-      } else if (line.trim().match(/^\d+\. /)) {
-        flushTable();
-        currentList.push(line.trim().replace(/^\d+\.\s/, ''));
-      }
-      // Paragraphs
-      else if (line.trim()) {
-        flushList();
-        flushTable();
-        elements.push({ type: 'p', text: line });
-      } else {
-        flushList();
-        flushTable();
-      }
+      else if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) { flushTable(); currentList.push(line.trim().slice(2)); }
+      else if (line.trim().match(/^\d+\. /)) { flushTable(); currentList.push(line.trim().replace(/^\d+\.\s/, '')); }
+      else if (line.trim()) { flushList(); flushTable(); elements.push({ type: 'p', text: line }); }
+      else { flushList(); flushTable(); }
     });
-
-    flushList();
-    flushTable();
+    flushList(); flushTable();
     return elements;
   };
 
@@ -111,149 +60,110 @@ const OnboardingGuide = ({ content }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
+  const handlePrint = () => window.print();
   const elements = parseMarkdown(content);
 
   if (!content) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[400px] text-gray-400">
-        <div className="text-center">
-          <svg className="w-16 h-16 mx-auto mb-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <p className="text-lg">No onboarding guide available</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+        <div style={{ textAlign: 'center', color: '#555' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>📖</div>
+          <p style={{ fontSize: 15 }}>No onboarding guide available</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full">
+    <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-          </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid #1A1A1A' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: '#1A1A1A', border: '1px solid #2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>📖</div>
           <div>
-            <h2 className="text-xl font-bold text-white">Onboarding Guide</h2>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-xs text-blue-400 font-semibold">Generated by AI</span>
+            <h2 style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>Onboarding Guide</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: GOLD }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: GOLD }}>Generated by AI</span>
             </div>
           </div>
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={handleCopy}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg transition-all duration-200 flex items-center gap-2"
+            style={{ padding: '7px 16px', borderRadius: 999, background: 'transparent', border: '1px solid #2A2A2A', color: '#A0A0A0', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.color = '#fff'; }}
+            onMouseOut={e =>  { e.currentTarget.style.borderColor = '#2A2A2A'; e.currentTarget.style.color = '#A0A0A0'; }}
           >
-            {copied ? (
-              <>
-                <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Copied!
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Copy
-              </>
-            )}
+            {copied ? '✓ Copied' : 'Copy'}
           </button>
           <button
             onClick={handlePrint}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg transition-all duration-200 flex items-center gap-2"
+            style={{ padding: '7px 16px', borderRadius: 999, background: 'transparent', border: '1px solid #2A2A2A', color: '#A0A0A0', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.color = '#fff'; }}
+            onMouseOut={e =>  { e.currentTarget.style.borderColor = '#2A2A2A'; e.currentTarget.style.color = '#A0A0A0'; }}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
             Export PDF
           </button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="prose prose-invert max-w-none markdown-content">
-        {elements.map((element, index) => {
-          switch (element.type) {
+      <div>
+        {elements.map((el, i) => {
+          switch (el.type) {
             case 'h2':
-              return (
-                <h2 key={index} className="text-2xl font-bold gradient-text mb-4 mt-8">
-                  {element.text}
-                </h2>
-              );
+              return <h2 key={i} className="md-h2" style={{ color: GOLD }}>{el.text}</h2>;
             case 'h3':
-              return (
-                <h3 key={index} className="text-xl font-semibold text-white mb-3 mt-6">
-                  {element.text}
-                </h3>
-              );
+              return <h3 key={i} className="md-h3">{el.text}</h3>;
             case 'h4':
-              return (
-                <h4 key={index} className="text-lg font-semibold text-gray-300 mb-2 mt-4">
-                  {element.text}
-                </h4>
-              );
+              return <h4 key={i} className="md-h4">{el.text}</h4>;
             case 'p':
-              return (
-                <p key={index} className="text-gray-300 mb-4 leading-relaxed">
-                  {element.text}
-                </p>
-              );
+              return <p key={i} className="md-p">{el.text}</p>;
             case 'list':
               return (
-                <ul key={index} className="list-disc list-inside space-y-2 mb-4 text-gray-300">
-                  {element.items.map((item, i) => (
-                    <li key={i} className="ml-4">{item}</li>
+                <ul key={i} style={{ paddingLeft: 20, margin: '0 0 14px' }}>
+                  {el.items.map((item, j) => (
+                    <li key={j} className="md-li">• {item}</li>
                   ))}
                 </ul>
               );
             case 'code':
               return (
-                <div key={index} className="mb-4">
-                  {element.language && (
-                    <div className="bg-gray-800 px-4 py-2 rounded-t-lg border-b border-gray-700">
-                      <span className="text-xs font-semibold text-blue-400 uppercase">{element.language}</span>
+                <div key={i} style={{ marginBottom: 16 }}>
+                  {el.language && (
+                    <div style={{ background: '#0d1117', borderRadius: '8px 8px 0 0', padding: '7px 14px', border: '1px solid #21262d', borderBottom: 'none' }}>
+                      <span className="md-code-lang">{el.language}</span>
                     </div>
                   )}
-                  <pre className={`bg-gray-900 p-4 ${element.language ? 'rounded-b-lg' : 'rounded-lg'} overflow-x-auto border border-gray-700`}>
-                    <code className="text-sm text-gray-300 font-mono">
-                      {element.code.join('\n')}
-                    </code>
+                  <pre style={{
+                    margin: 0, background: '#0d1117',
+                    border: '1px solid #21262d',
+                    borderRadius: el.language ? '0 0 8px 8px' : 8,
+                    padding: '14px 16px', overflowX: 'auto',
+                    fontSize: 12.5, lineHeight: 1.65, color: '#e6edf3',
+                    fontFamily: '"JetBrains Mono","Fira Code",Consolas,monospace',
+                  }}>
+                    <code>{el.code.join('\n')}</code>
                   </pre>
                 </div>
               );
             case 'table':
               return (
-                <div key={index} className="mb-6 overflow-x-auto">
-                  <table className="w-full border-collapse bg-gray-900 rounded-lg overflow-hidden">
+                <div key={i} style={{ overflowX: 'auto', marginBottom: 20 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', background: '#0d1117', borderRadius: 10, overflow: 'hidden' }}>
                     <thead>
-                      <tr className="bg-gray-800">
-                        {element.headers.map((header, i) => (
-                          <th key={i} className="px-4 py-3 text-left text-sm font-semibold text-blue-400 border-b border-gray-700">
-                            {header}
-                          </th>
+                      <tr style={{ background: '#111' }}>
+                        {el.headers.map((h, j) => (
+                          <th key={j} className="md-table-th">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {element.rows.map((row, i) => (
-                        <tr key={i} className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
-                          {row.map((cell, j) => (
-                            <td key={j} className="px-4 py-3 text-sm text-gray-300">
-                              {cell}
-                            </td>
+                      {el.rows.map((row, j) => (
+                        <tr key={j}>
+                          {row.map((cell, k) => (
+                            <td key={k} className="md-table-td">{cell}</td>
                           ))}
                         </tr>
                       ))}
@@ -261,8 +171,7 @@ const OnboardingGuide = ({ content }) => {
                   </table>
                 </div>
               );
-            default:
-              return null;
+            default: return null;
           }
         })}
       </div>
@@ -271,5 +180,3 @@ const OnboardingGuide = ({ content }) => {
 };
 
 export default OnboardingGuide;
-
-// Made with Bob

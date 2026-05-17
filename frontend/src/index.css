@@ -4,324 +4,288 @@
 
 @layer base {
   :root {
-    --color-primary: #3B82F6;
-    --color-secondary: #8B5CF6;
-    --color-accent: #06B6D4;
-    --color-success: #10B981;
-    --color-warning: #F59E0B;
-    --color-error: #EF4444;
+    --gold:       #C8920A;
+    --gold-dim:   #96700A;
+    --gold-glow:  rgba(200, 146, 10, 0.18);
+    --bg:         #0A0A0A;
+    --card:       #111111;
+    --card-alt:   #141414;
+    --border:     #2A2A2A;
+    --border-dim: #1A1A1A;
+    --text:       #FFFFFF;
+    --text-muted: #A0A0A0;
+    --text-dim:   #555555;
   }
 
-  body {
-    @apply bg-gray-950 text-gray-100 antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Fixed radial gradient from bottom-left — gold fading to transparent */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 80% 60% at 0% 100%,
+      rgba(200, 146, 10, 0.14) 0%,
+      rgba(200, 146, 10, 0.06) 40%,
+      transparent 70%
+    );
   }
 
   #root {
-    @apply min-h-screen;
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
   }
 }
 
 @layer components {
-  /* Gradient Text */
-  .gradient-text {
-    @apply bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent;
-  }
-
-  .gradient-text-alt {
-    @apply bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent;
-  }
-
-  /* Gradient Backgrounds */
-  .gradient-bg {
-    @apply bg-gradient-to-br from-blue-600 via-purple-600 to-cyan-600;
-  }
-
-  .gradient-bg-subtle {
-    @apply bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900;
-  }
-
-  /* Glass Effect */
-  .glass {
-    @apply bg-gray-900/50 backdrop-blur-xl border border-gray-800/50;
-  }
-
-  .glass-hover {
-    @apply glass hover:bg-gray-800/60 hover:border-gray-700/50 transition-all duration-300;
-  }
-
-  /* Card Styles */
-  .card {
-    @apply bg-gray-900 rounded-xl border border-gray-800 p-6 shadow-xl;
-  }
-
-  .card-hover {
-    @apply card hover:border-blue-500/50 hover:shadow-blue-500/10 hover:shadow-2xl transition-all duration-300 cursor-pointer;
-  }
-
-  /* Button Styles */
+  /* ── Buttons ─────────────────────────────────────────────────── */
   .btn-primary {
-    @apply px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg 
-           hover:from-blue-500 hover:to-purple-500 transition-all duration-300 
-           shadow-lg hover:shadow-xl hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: #FFFFFF;
+    color: #000000;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #F0F0F0;
+    box-shadow: 0 0 24px rgba(255,255,255,0.15);
+    transform: translateY(-1px);
+  }
+  .btn-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
   .btn-secondary {
-    @apply px-6 py-3 bg-gray-800 text-gray-100 font-semibold rounded-lg 
-           hover:bg-gray-700 transition-all duration-300 border border-gray-700
-           hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: transparent;
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    border: 1px solid #FFFFFF;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: rgba(255,255,255,0.07);
+    transform: translateY(-1px);
+  }
+  .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-gold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--gold);
+    color: #000000;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-gold:hover:not(:disabled) {
+    background: #D9A010;
+    box-shadow: 0 0 24px var(--gold-glow);
+    transform: translateY(-1px);
   }
 
-  .btn-ghost {
-    @apply px-4 py-2 text-gray-400 hover:text-gray-100 hover:bg-gray-800 rounded-lg transition-all duration-200;
+  /* ── Cards ───────────────────────────────────────────────────── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
   }
 
-  /* Input Styles */
-  .input {
-    @apply w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-gray-100 
-           placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-           transition-all duration-200;
+  .card-gold {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.2s ease;
+  }
+  .card-gold:hover {
+    border-color: var(--border);
+    border-left-color: #D9A010;
+    box-shadow: 0 0 20px rgba(200,146,10,0.08);
   }
 
-  /* Badge Styles */
+  /* ── Badges ──────────────────────────────────────────────────── */
   .badge {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
   }
 
   .badge-primary {
-    @apply badge bg-blue-500/20 text-blue-400 border border-blue-500/30;
+    background: #1A1A1A;
+    color: var(--gold);
+    border: 1px solid rgba(200,146,10,0.3);
   }
 
   .badge-secondary {
-    @apply badge bg-purple-500/20 text-purple-400 border border-purple-500/30;
+    background: #1A1A1A;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
   }
 
-  .badge-success {
-    @apply badge bg-green-500/20 text-green-400 border border-green-500/30;
+  .badge-hackathon {
+    background: var(--gold);
+    color: #000000;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    padding: 4px 14px;
+    border-radius: 999px;
   }
 
-  /* Tab Styles */
+  /* ── Inputs ──────────────────────────────────────────────────── */
+  .input {
+    width: 100%;
+    padding: 12px 16px;
+    background: #111111;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+  .input::placeholder { color: var(--text-dim); }
+  .input:focus { border-color: var(--gold); }
+  .input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Tabs ────────────────────────────────────────────────────── */
   .tab {
-    @apply px-6 py-3 text-gray-400 font-medium border-b-2 border-transparent 
-           hover:text-gray-100 hover:border-gray-700 transition-all duration-200 cursor-pointer;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
   }
+  .tab:hover { color: var(--text); border-bottom-color: var(--border); }
 
   .tab-active {
-    @apply tab text-blue-400 border-blue-500 hover:border-blue-500;
+    color: var(--text);
+    border-bottom-color: var(--gold) !important;
   }
+
+  /* ── Gradient text (gold) ────────────────────────────────────── */
+  .gradient-text {
+    background: linear-gradient(135deg, var(--gold) 0%, #F0C040 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Section divider ─────────────────────────────────────────── */
+  .divider { height: 1px; background: var(--border); }
 }
 
 @layer utilities {
-  /* Custom Scrollbar */
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
 
-  .scrollbar-thin::-webkit-scrollbar-track {
-    @apply bg-gray-900;
-  }
+  .glow-gold { box-shadow: 0 0 24px rgba(200,146,10,0.25); }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-gray-700 rounded-full hover:bg-gray-600;
-  }
-
-  /* Animations */
   .animate-fade-in {
-    animation: fadeIn 0.5s ease-in;
+    animation: fadeUp 0.5s ease forwards;
+    opacity: 0;
   }
-
   .animate-slide-up {
-    animation: slideUp 0.5s ease-out;
-  }
-
-  .animate-slide-down {
-    animation: slideDown 0.5s ease-out;
-  }
-
-  .animate-pulse-slow {
-    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  .animate-gradient {
-    background-size: 200% 200%;
-    animation: gradient 8s ease infinite;
-  }
-
-  /* Glow Effects */
-  .glow-blue {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-  }
-
-  .glow-purple {
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
-  }
-
-  .glow-cyan {
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
-  }
-
-  /* Hide scrollbar but keep functionality */
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-/* Keyframe Animations */
-/* fadeIn keyframe is defined below with translate animation */
-
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
+    animation: fadeUp 0.6s ease forwards;
     opacity: 0;
   }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
 }
 
-@keyframes slideDown {
-  from {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* Loading Spinner */
-.spinner {
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  border-top: 3px solid #3B82F6;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-}
-
-.spinner-sm {
-  border-width: 2px;
-  width: 20px;
-  height: 20px;
+/* ── Keyframes ───────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
+  0%   { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-/* Skeleton Loading */
-.skeleton {
-  @apply bg-gray-800 animate-pulse rounded;
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
 }
 
-/* Code Block Styling */
-pre {
-  @apply bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800;
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
 }
 
-code {
-  @apply text-sm font-mono text-blue-400;
+/* ── Spinner ──────────────────────────────────────────────────── */
+.spinner {
+  border: 2px solid rgba(200,146,10,0.15);
+  border-top: 2px solid var(--gold);
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  animation: spin 0.9s linear infinite;
 }
 
-/* Markdown Styling */
-.markdown {
-  @apply prose prose-invert max-w-none;
-}
+/* ── Scrollbar ────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0A0A0A; }
+::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3A3A3A; }
 
-.markdown h1 {
-  @apply text-3xl font-bold mb-4 gradient-text;
-}
-
-.markdown h2 {
-  @apply text-2xl font-bold mb-3 text-gray-100;
-}
-
-.markdown h3 {
-  @apply text-xl font-semibold mb-2 text-gray-200;
-}
-
-.markdown p {
-  @apply mb-4 text-gray-300 leading-relaxed;
-}
-
-.markdown ul, .markdown ol {
-  @apply mb-4 ml-6 text-gray-300;
-}
-
-.markdown li {
-  @apply mb-2;
-}
-
-.markdown a {
-  @apply text-blue-400 hover:text-blue-300 underline;
-}
-
-.markdown table {
-  @apply w-full border-collapse mb-4;
-}
-
-.markdown th {
-  @apply bg-gray-800 px-4 py-2 text-left font-semibold border border-gray-700;
-}
-
-.markdown td {
-  @apply px-4 py-2 border border-gray-800;
-}
-
-/* Animated Background */
-.animated-bg {
-  background: linear-gradient(-45deg, #1e1b4b, #1e293b, #0f172a, #1e1b4b);
-  background-size: 400% 400%;
-  animation: gradient 15s ease infinite;
-}
-
-/* Made with Bob */
-
-  /* Fade In Animation (consolidated - removed duplicate) */
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-in forwards;
-    opacity: 0;
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Float animation for ChatPanel empty state */
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
+/* ── Onboarding markdown styles ───────────────────────────────── */
+.md-h2 { font-size: 22px; font-weight: 700; color: #fff; margin: 28px 0 12px; }
+.md-h3 { font-size: 17px; font-weight: 600; color: #e0e0e0; margin: 20px 0 8px; }
+.md-h4 { font-size: 15px; font-weight: 600; color: #A0A0A0; margin: 16px 0 6px; }
+.md-p  { font-size: 14px; color: #A0A0A0; line-height: 1.75; margin-bottom: 12px; }
+.md-li { font-size: 14px; color: #A0A0A0; line-height: 1.7; margin-bottom: 4px; }
+.md-code-lang { font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 0.06em; }
+.md-table-th  { font-size: 12px; font-weight: 600; color: var(--gold); text-align: left; padding: 10px 14px; border-bottom: 1px solid #2A2A2A; }
+.md-table-td  { font-size: 13px; color: #A0A0A0; padding: 9px 14px; border-bottom: 1px solid #1A1A1A; }
