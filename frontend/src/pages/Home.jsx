@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import RepoInput from '../components/RepoInput';
 import StatsBar from '../components/StatsBar';
 import { analyzeRepo } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 const FEATURES = [
   { icon: '📄', title: 'Plain English Summary',  description: 'What the project does, who it\'s for, and why it exists' },
@@ -14,6 +15,7 @@ const FEATURES = [
 
 function Home() {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error,       setError]       = useState(null);
 
@@ -35,23 +37,36 @@ function Home() {
       {/* ── Nav ── */}
       <nav style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '20px 40px',
+        padding: '16px 40px',
         position: 'sticky', top: 0, zIndex: 50,
+        background: 'rgba(10,10,10,0.9)', backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #1A1A1A',
       }}>
         <span style={{ fontWeight: 800, fontSize: 20, color: '#fff', letterSpacing: '-0.02em' }}>
           RepoSense
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          <a href="#features" style={{ color: '#A0A0A0', textDecoration: 'none', fontSize: 14, transition: 'color 0.2s' }}
-            onMouseOver={e => e.target.style.color='#fff'} onMouseOut={e => e.target.style.color='#A0A0A0'}>
-            Features
-          </a>
-          <a href="#stats" style={{ color: '#A0A0A0', textDecoration: 'none', fontSize: 14, transition: 'color 0.2s' }}
-            onMouseOver={e => e.target.style.color='#fff'} onMouseOut={e => e.target.style.color='#A0A0A0'}>
-            Stats
-          </a>
-          <button className="btn-secondary" style={{ padding: '8px 20px', fontSize: 13 }}>
-            Sign In
+
+        {/* User info + sign out */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {user?.photoURL && (
+            <img
+              src={user.photoURL}
+              alt={user.displayName}
+              style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid #2A2A2A', objectFit: 'cover' }}
+              referrerPolicy="no-referrer"
+            />
+          )}
+          {user?.displayName && (
+            <span style={{ fontSize: 13, color: '#A0A0A0', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.displayName}
+            </span>
+          )}
+          <button
+            className="btn-secondary"
+            style={{ padding: '7px 18px', fontSize: 12 }}
+            onClick={signOut}
+          >
+            Sign Out
           </button>
         </div>
       </nav>
@@ -61,7 +76,7 @@ function Home() {
 
         {/* Hackathon badge */}
         <div className="animate-fade-in" style={{ marginBottom: 28 }}>
-          <span className="badge-hackathon">IBM Bob Hackathon</span>
+          <span className="badge-hackathon">Developed using IBM Bob</span>
         </div>
 
         {/* Headline */}

@@ -81,7 +81,7 @@ const ChatPanel = ({ repoUrl, summary }) => {
           background: 'rgba(200,146,10,0.08)', border: '1px solid rgba(200,146,10,0.2)',
         }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: GOLD, animation: 'pulse 2s infinite' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: GOLD }}>Powered by IBM Bob</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: GOLD }}>Powered by Groq AI</span>
         </div>
       </div>
 

@@ -1,6 +1,43 @@
 """
 Firestore Service
 Handles interactions with Firebase Firestore database using firebase-admin SDK
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REQUIRED FIRESTORE SECURITY RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Deploy these rules in the Firebase Console → Firestore → Rules:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users/{uid} — read and write only by the owning user
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // analyses/{hash} — any authenticated user can read cached results,
+    // writes are performed only by the backend service account
+    match /analyses/{hash} {
+      allow read: if request.auth != null;
+      allow write: if false; // backend service account bypasses rules
+    }
+
+    // sessions/{sessionId} — read/write only by the session owner
+    // sessionId is expected to be prefixed with the user's uid
+    match /sessions/{sessionId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // stats/global — anyone authenticated can read, backend writes only
+    match /stats/global {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
 import os

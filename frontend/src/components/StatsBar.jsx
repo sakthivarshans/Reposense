@@ -56,7 +56,7 @@ const StatsBar = () => {
 
         <StatItem
           label="Powered by"
-          value="IBM Bob"
+          value="Groq AI"
           icon="⚡"
           valueStyle={{ color: GOLD }}
         />
