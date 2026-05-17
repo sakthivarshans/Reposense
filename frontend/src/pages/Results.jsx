@@ -1,27 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { analyzeRepo } from '../api/client';
 import ArchMap from '../components/ArchMap';
 import Heatmap from '../components/Heatmap';
 import ChatPanel from '../components/ChatPanel';
 import OnboardingGuide from '../components/OnboardingGuide';
 
+// Tab definitions matching the 5 RepoSense objectives
+const TABS = [
+  { id: 'summary',      label: 'Summary',          icon: '📄' },
+  { id: 'architecture', label: 'Architecture Map',  icon: '🗺️' },
+  { id: 'heatmap',      label: 'Complexity Heatmap', icon: '🌡️' },
+  { id: 'onboarding',   label: 'Onboarding Guide',  icon: '📖' },
+  { id: 'chat',         label: 'Chat with Code',    icon: '💬' },
+];
+
 function Results() {
   const location = useLocation();
   const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
+  const [repoUrl, setRepoUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('architecture');
-  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [activeTab, setActiveTab] = useState('summary');
 
   useEffect(() => {
-    // Get analysis data from navigation state
     if (location.state?.analysisData) {
       setAnalysis(location.state.analysisData);
+      setRepoUrl(location.state.repoUrl || '');
       setLoading(false);
     } else {
-      // If no state, redirect to home
       navigate('/');
     }
   }, [location, navigate]);
@@ -31,7 +38,7 @@ function Results() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="spinner mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading repository analysis...</p>
+          <p className="text-gray-400 text-lg">Loading repository analysis...</p>
         </div>
       </div>
     );
@@ -41,110 +48,201 @@ function Results() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-400 mb-4">{error}</p>
+          <p className="text-red-400 mb-4 text-lg">{error}</p>
           <button
             onClick={() => navigate('/')}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="btn-primary"
           >
-            Back to Home
+            ← Back to Home
           </button>
         </div>
       </div>
     );
   }
 
+  const repoName = repoUrl.split('/').slice(-2).join('/');
+
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/')}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                ← Back
-              </button>
-              <div>
-                <h1 className="text-xl font-bold text-white">
-                  {analysis?.repo_name}
-                </h1>
-                <p className="text-sm text-gray-400">{analysis?.repo_url}</p>
-              </div>
-            </div>
+    <div className="min-h-screen flex flex-col">
+      {/* Sticky Header */}
+      <header className="bg-gray-900/80 backdrop-blur-md border-b border-gray-800 sticky top-0 z-20">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <button
-              onClick={() => setShowOnboarding(true)}
-              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+              onClick={() => navigate('/')}
+              className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1"
             >
-              Help
+              ← Back
             </button>
+            <div className="h-5 w-px bg-gray-700" />
+            <div>
+              <p className="text-white font-semibold text-sm">{repoName}</p>
+              <p className="text-gray-500 text-xs truncate max-w-xs">{repoUrl}</p>
+            </div>
+            {analysis?.cached && (
+              <span className="badge badge-secondary text-xs">Cached</span>
+            )}
+          </div>
+          {/* Tech stack badges in header */}
+          {analysis?.tech_stack?.length > 0 && (
+            <div className="hidden md:flex items-center gap-2 overflow-hidden">
+              {analysis.tech_stack.slice(0, 5).map((tech, i) => (
+                <span key={i} className="badge badge-primary text-xs">{tech}</span>
+              ))}
+              {analysis.tech_stack.length > 5 && (
+                <span className="text-xs text-gray-500">+{analysis.tech_stack.length - 5} more</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Tab Bar */}
+        <div className="container mx-auto px-4">
+          <div className="flex overflow-x-auto hide-scrollbar gap-1 pb-0">
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  flex items-center gap-2 px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
+                  ${activeTab === tab.id
+                    ? 'border-blue-500 text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-600'
+                  }
+                `}
+              >
+                <span>{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
       </header>
 
-      {/* Stats Bar */}
-      {stats && <StatsBar stats={stats} />}
-
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Panel - Visualizations */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Tabs */}
-            <div className="flex space-x-2 bg-gray-800/50 p-2 rounded-lg">
-              <TabButton
-                active={activeTab === 'architecture'}
-                onClick={() => setActiveTab('architecture')}
-              >
-                Architecture Map
-              </TabButton>
-              <TabButton
-                active={activeTab === 'heatmap'}
-                onClick={() => setActiveTab('heatmap')}
-              >
-                Activity Heatmap
-              </TabButton>
+      <main className="flex-1 container mx-auto px-4 py-6">
+
+        {/* ── Tab 1: Summary ─────────────────────────────────────────── */}
+        {activeTab === 'summary' && (
+          <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+            <SectionHeader
+              icon="📄"
+              title="Plain English Summary"
+              subtitle="What this project does, who it's for, and why it exists"
+            />
+
+            {/* Summary text */}
+            <div className="bg-gray-800/50 rounded-xl p-8 border border-gray-700 space-y-4">
+              {analysis?.summary
+                ? analysis.summary.split('\n\n').filter(Boolean).map((para, i) => (
+                    <p key={i} className="text-gray-300 leading-relaxed">{para}</p>
+                  ))
+                : <p className="text-gray-500 italic">No summary available.</p>
+              }
             </div>
 
-            {/* Content */}
-            <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-              {activeTab === 'architecture' && (
-                <ArchMap architecture={analysis?.architecture || []} />
-              )}
-              {activeTab === 'heatmap' && (
-                <Heatmap data={stats?.heatmap_data || []} />
-              )}
+            {/* Tech stack */}
+            {analysis?.tech_stack?.length > 0 && (
+              <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">
+                  Technologies Detected
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {analysis.tech_stack.map((tech, i) => (
+                    <span key={i} className="badge badge-primary">{tech}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quick nav — invite user to explore other tabs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {TABS.filter(t => t.id !== 'summary').map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className="bg-gray-800/40 hover:bg-gray-700/60 border border-gray-700 hover:border-blue-500/50 rounded-xl p-4 text-left transition-all duration-200 group"
+                >
+                  <span className="text-2xl mb-2 block group-hover:scale-110 transition-transform">{tab.icon}</span>
+                  <p className="text-sm font-semibold text-white">{tab.label}</p>
+                </button>
+              ))}
             </div>
           </div>
+        )}
 
-          {/* Right Panel - Chat */}
-          <div className="lg:col-span-1">
-            <ChatPanel repoId={repoId} />
+        {/* ── Tab 2: Architecture Map ─────────────────────────────────── */}
+        {activeTab === 'architecture' && (
+          <div className="animate-fade-in">
+            <SectionHeader
+              icon="🗺️"
+              title="Architecture Map"
+              subtitle="Interactive graph — drag nodes, scroll to zoom, click for details"
+            />
+            <div className="bg-gray-800/50 rounded-xl border border-gray-700 overflow-hidden mt-6" style={{ minHeight: '600px' }}>
+              <ArchMap data={analysis?.architecture || { nodes: [], edges: [] }} />
+            </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Onboarding Guide */}
-      {showOnboarding && (
-        <OnboardingGuide onClose={() => setShowOnboarding(false)} />
-      )}
+        {/* ── Tab 3: Complexity Heatmap ────────────────────────────────── */}
+        {activeTab === 'heatmap' && (
+          <div className="animate-fade-in">
+            <SectionHeader
+              icon="🌡️"
+              title="Complexity Heatmap"
+              subtitle="Every file scored 0–10 by risk. Red = approach carefully. Green = safe to edit."
+            />
+            <div className="mt-6">
+              <Heatmap data={analysis?.complexity_map || []} />
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab 4: Onboarding Guide ──────────────────────────────────── */}
+        {activeTab === 'onboarding' && (
+          <div className="max-w-4xl mx-auto animate-fade-in">
+            <SectionHeader
+              icon="📖"
+              title="Onboarding Guide"
+              subtitle="Written by AI as if a senior engineer is personally onboarding you"
+            />
+            <div className="bg-gray-800/50 rounded-xl p-8 border border-gray-700 mt-6">
+              <OnboardingGuide content={analysis?.onboarding_guide} />
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab 5: Chat ─────────────────────────────────────────────── */}
+        {activeTab === 'chat' && (
+          <div className="animate-fade-in">
+            <SectionHeader
+              icon="💬"
+              title="Chat with the Codebase"
+              subtitle="Ask anything in plain English — the AI has read the entire repository"
+            />
+            <div className="mt-6 max-w-3xl mx-auto" style={{ height: '70vh' }}>
+              <ChatPanel repoUrl={repoUrl} summary={analysis?.summary} />
+            </div>
+          </div>
+        )}
+
+      </main>
     </div>
   );
 }
 
-function TabButton({ active, onClick, children }) {
+function SectionHeader({ icon, title, subtitle }) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-        active
-          ? 'bg-blue-600 text-white'
-          : 'text-gray-400 hover:text-white hover:bg-gray-700'
-      }`}
-    >
-      {children}
-    </button>
+    <div className="flex items-start gap-4">
+      <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 shadow-lg shadow-blue-500/20">
+        {icon}
+      </div>
+      <div>
+        <h2 className="text-2xl font-bold text-white">{title}</h2>
+        <p className="text-gray-400 text-sm mt-1">{subtitle}</p>
+      </div>
+    </div>
   );
 }
 

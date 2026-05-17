@@ -97,7 +97,7 @@ class FirestoreService:
             logger.info(f"Querying cached analysis for hash: {repo_hash}")
             
             # Run sync Firestore call in executor
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             doc_ref = self.db.collection('analyses').document(repo_hash)
             
             # Properly await the executor result
@@ -133,7 +133,7 @@ class FirestoreService:
             analysis['created_at'] = datetime.utcnow()
             analysis['repo_hash'] = repo_hash
             
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             
             # Save to analyses/{repo_hash}
             doc_ref = self.db.collection('analyses').document(repo_hash)
@@ -157,7 +157,7 @@ class FirestoreService:
             return
             
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             stats_ref = self.db.collection('stats').document('global')
             
             # Get current stats
@@ -208,7 +208,7 @@ class FirestoreService:
         try:
             logger.info(f"Querying session history for: {session_id}")
             
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             doc_ref = self.db.collection('sessions').document(session_id)
             doc = await loop.run_in_executor(None, doc_ref.get)
             
@@ -248,7 +248,7 @@ class FirestoreService:
         try:
             logger.info(f"Saving chat message for session: {session_id}")
             
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             doc_ref = self.db.collection('sessions').document(session_id)
             
             # Get existing session
@@ -309,7 +309,7 @@ class FirestoreService:
         try:
             logger.info("Querying global stats")
             
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             stats_ref = self.db.collection('stats').document('global')
             doc = await loop.run_in_executor(None, stats_ref.get)
             

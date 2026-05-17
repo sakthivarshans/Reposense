@@ -6,12 +6,12 @@ Handles all AI-powered analysis using Groq API
 import os
 import json
 import httpx
+import asyncio
 from typing import Dict, List, Any, Optional
 
 # Groq API configuration
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = os.getenv("GROQ_MODEL", "mixtral-8x7b-32768")  # Default to Mixtral
+# NOTE: GROQ_API_KEY and GROQ_MODEL are read at call time so that load_dotenv() in main.py takes effect first
 
 
 async def _call_groq(messages: List[Dict[str, str]], temperature: float = 0.7, max_tokens: int = 4000) -> str:
@@ -26,6 +26,8 @@ async def _call_groq(messages: List[Dict[str, str]], temperature: float = 0.7, m
     Returns:
         Response text from Groq
     """
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    GROQ_MODEL = os.getenv("GROQ_MODEL", "llama3-8b-8192")  # Default to llama3
     if not GROQ_API_KEY:
         raise ValueError("GROQ_API_KEY environment variable not set")
     
@@ -35,7 +37,7 @@ async def _call_groq(messages: List[Dict[str, str]], temperature: float = 0.7, m
     }
     
     payload = {
-        "model": GROQ_MODEL,
+        "model": GROQ_MODEL,  # type: ignore[name-defined]  # defined just above
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -353,9 +355,59 @@ Answer questions clearly and concisely. Reference specific files and code when r
     return await _call_groq(messages, temperature=0.7, max_tokens=1000)
 
 
+async def generate_tech_stack(chunks: List[Dict[str, Any]]) -> List[str]:
+    """
+    Generate a list of technologies/frameworks used in the repository
+
+    Args:
+        chunks: List of code chunks
+
+    Returns:
+        List of technology names as strings
+    """
+    metadata_chunk = next((c for c in chunks if c.get("type") == "METADATA"), None)
+    repo_structure = metadata_chunk.get("content", "") if metadata_chunk else ""
+
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a software expert. Return only valid JSON."
+        },
+        {
+            "role": "user",
+            "content": f"""Based on this repository structure, list the main technologies, languages, and frameworks used.
+
+Repository Structure:
+{repo_structure}
+
+Return a JSON array of strings, for example:
+["Python", "FastAPI", "React", "PostgreSQL"]
+
+Return ONLY the JSON array, no other text."""
+        }
+    ]
+
+    response = await _call_groq(messages, temperature=0.2, max_tokens=500)
+
+    try:
+        if "```json" in response:
+            response = response.split("```json")[1].split("```")[0].strip()
+        elif "```" in response:
+            response = response.split("```")[1].split("```")[0].strip()
+        result = json.loads(response)
+        if isinstance(result, list):
+            return result
+    except json.JSONDecodeError:
+        pass
+    return []
+
+
 async def analyze_full(chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Perform full repository analysis using Groq
+    
+    Runs summary, architecture, complexity map, and tech stack in parallel,
+    then uses the summary to generate the onboarding guide.
     
     Args:
         chunks: List of code chunks
@@ -363,15 +415,21 @@ async def analyze_full(chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
     Returns:
         Complete analysis results
     """
-    # Generate all components
-    summary = await generate_summary(chunks)
-    architecture_map = await generate_architecture_map(chunks)
-    complexity_map = await generate_complexity_map(chunks)
+    # Step 1: Run 4 independent analyses in parallel for speed
+    summary, architecture, complexity_map, tech_stack = await asyncio.gather(
+        generate_summary(chunks),
+        generate_architecture_map(chunks),
+        generate_complexity_map(chunks),
+        generate_tech_stack(chunks),
+    )
+    
+    # Step 2: Onboarding guide depends on summary — run after
     onboarding_guide = await generate_onboarding_guide(chunks, summary)
     
     return {
         "summary": summary,
-        "architecture_map": architecture_map,
+        "architecture": architecture,  # key matches AnalysisResult.architecture
+        "tech_stack": tech_stack,
         "complexity_map": complexity_map,
         "onboarding_guide": onboarding_guide
     }

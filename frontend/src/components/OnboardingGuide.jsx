@@ -85,7 +85,7 @@ const OnboardingGuide = ({ content }) => {
       else if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
         flushTable();
         currentList.push(line.trim().slice(2));
-      } else if (line.trim().startsWith(/\d+\. /)) {
+      } else if (line.trim().match(/^\d+\. /)) {
         flushTable();
         currentList.push(line.trim().replace(/^\d+\.\s/, ''));
       }

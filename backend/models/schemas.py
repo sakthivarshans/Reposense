@@ -2,7 +2,7 @@
 Pydantic schemas for request/response validation
 """
 
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 import re
@@ -14,8 +14,9 @@ class AnalyzeRequest(BaseModel):
     repo_url: str = Field(..., description="GitHub repository URL")
     force_refresh: bool = Field(default=False, description="Force re-analysis even if cached")
     
-    @validator('repo_url')
-    def validate_github_url(cls, v):
+    @field_validator('repo_url')
+    @classmethod
+    def validate_github_url(cls, v: str) -> str:
         """Validate that the URL is a valid GitHub repository URL"""
         github_pattern = r'^https?://github\.com/[\w-]+/[\w.-]+/?$'
         if not re.match(github_pattern, v.rstrip('/')):
@@ -37,8 +38,9 @@ class ChatRequest(BaseModel):
     question: str = Field(..., description="User question about the repository")
     session_id: str = Field(..., description="Chat session identifier")
     
-    @validator('question')
-    def validate_question(cls, v):
+    @field_validator('question')
+    @classmethod
+    def validate_question(cls, v: str) -> str:
         """Ensure question is not empty"""
         if not v.strip():
             raise ValueError('Question cannot be empty')

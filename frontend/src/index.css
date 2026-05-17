@@ -161,17 +161,20 @@
   .glow-cyan {
     box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
   }
+
+  /* Hide scrollbar but keep functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Keyframe Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
+/* fadeIn keyframe is defined below with translate animation */
+
 
 @keyframes slideUp {
   from {
@@ -296,7 +299,7 @@ code {
 
 /* Made with Bob */
 
-  /* Fade In Animation */
+  /* Fade In Animation (consolidated - removed duplicate) */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-in forwards;
     opacity: 0;
@@ -311,4 +314,14 @@ code {
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* Float animation for ChatPanel empty state */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
   }
