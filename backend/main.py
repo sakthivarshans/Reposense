@@ -24,14 +24,20 @@ app = FastAPI(
 )
 
 # Configure CORS
+# ALLOWED_ORIGINS env var: comma-separated list of extra origins for production
+_extra_origins = os.getenv("ALLOWED_ORIGINS", "")
+_extra = [o.strip() for o in _extra_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # Vite default dev server
-        "http://localhost:3000",  # Alternative React dev server
+        "http://localhost:5173",
+        "http://localhost:3000",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000",
+        *_extra,           # any domains added via ALLOWED_ORIGINS env var
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",   # ← allows ALL vercel.app subdomains
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
